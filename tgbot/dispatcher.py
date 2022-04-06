@@ -35,7 +35,7 @@ def setup_dispatcher(dp):
     # onboarding
 
     dp.add_handler(onboarding_handlers.get_conv_handler())
-
+    #DPDPD
 
     # admin commands
     dp.add_handler(CommandHandler("admin", admin_handlers.admin))
