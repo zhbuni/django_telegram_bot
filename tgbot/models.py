@@ -93,3 +93,16 @@ class Location(CreateTracker):
             save_data_from_arcgis(latitude=self.latitude, longitude=self.longitude, location_id=self.pk)
         else:
             save_data_from_arcgis.delay(latitude=self.latitude, longitude=self.longitude, location_id=self.pk)
+
+
+class StaticText(CreateTracker):
+    key_word = models.CharField(max_length=255)
+    text = models.CharField(max_length=2**12, default='')
+
+
+class Category(CreateTracker):
+    name = models.CharField(max_length=255, null=False)
+    level = models.IntegerField(default=0)
+    above_category = models.CharField(default='None', max_length=255, help_text="For top level category is None, because top level doesn't have parent" + \
+                                                               "\nFor others it represents parent category.")
+    text_for_chat = models.CharField(max_length=2048, default='')

@@ -6,6 +6,8 @@ from dtb.settings import DEBUG
 
 from tgbot.models import Location
 from tgbot.models import User
+from tgbot.models import Category
+from tgbot.models import StaticText
 from tgbot.forms import BroadcastForm
 
 from tgbot.tasks import broadcast_message
@@ -52,3 +54,13 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
     list_display = ['id', 'user_id', 'created_at']
+
+
+@admin.register(StaticText)
+class StaticTextAdmin(admin.ModelAdmin):
+    list_display = ['id', 'key_word', 'text']
+
+
+@admin.register(Category)
+class StaticTextAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'level', 'above_category', 'text_for_chat']

@@ -6,11 +6,13 @@ import logging
 from typing import Dict
 
 import telegram.error
-from telegram import Bot, Update, BotCommand
+from telegram import Bot, Update, BotCommand, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
     Updater, Dispatcher, Filters,
     CommandHandler, MessageHandler,
     CallbackQueryHandler,
+    ConversationHandler,
+    CallbackContext,
 )
 
 from dtb.celery import app  # event processing in async mode
@@ -31,7 +33,9 @@ def setup_dispatcher(dp):
     Adding handlers for events from Telegram
     """
     # onboarding
-    dp.add_handler(CommandHandler("start", onboarding_handlers.command_start))
+
+    dp.add_handler(onboarding_handlers.get_conv_handler())
+
 
     # admin commands
     dp.add_handler(CommandHandler("admin", admin_handlers.admin))
@@ -61,6 +65,9 @@ def setup_dispatcher(dp):
     # handling errors
     dp.add_error_handler(error.send_stacktrace_to_tg_chat)
 
+
+
+
     # EXAMPLES FOR HANDLERS
     # dp.add_handler(MessageHandler(Filters.text, <function_handler>))
     # dp.add_handler(MessageHandler(
@@ -82,7 +89,6 @@ def run_pooling():
 
     dp = updater.dispatcher
     dp = setup_dispatcher(dp)
-
     bot_info = Bot(TELEGRAM_TOKEN).get_me()
     bot_link = f"https://t.me/" + bot_info["username"]
 
@@ -96,6 +102,7 @@ def run_pooling():
 
 
 # Global variable - best way I found to init Telegram bot
+print(TELEGRAM_TOKEN)
 bot = Bot(TELEGRAM_TOKEN)
 try:
     TELEGRAM_BOT_USERNAME = bot.get_me()["username"]
@@ -158,7 +165,7 @@ def set_up_commands(bot_instance: Bot) -> None:
 
 # WARNING: it's better to comment the line below in DEBUG mode.
 # Likely, you'll get a flood limit control error, when restarting bot too often
-set_up_commands(bot)
+# set_up_commands(bot)
 
 n_workers = 0 if DEBUG else 4
 dispatcher = setup_dispatcher(Dispatcher(bot, update_queue=None, workers=n_workers, use_context=True))

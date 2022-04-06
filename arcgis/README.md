@@ -1,4 +1,5 @@
-# Arcgis - free reverse geocoding
+# Arcgis - free reverse geocodinglocation = models.OneToOneField(Location, on_delete=models.CASCADE, primary_key=True)
+
 
 This package is optional.
 
