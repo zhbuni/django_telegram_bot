@@ -21,5 +21,6 @@ jobs:
       with:
           ssh-private-key: ${{ secrets.UBUNTU_KEY }}
           dokku-host: 'ovz1.j05793293.pv29m.vps.myjino.ru'
+
           app-name: 'dtb'
           git-push-flags: '--force'
