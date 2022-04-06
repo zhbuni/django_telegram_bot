@@ -2,6 +2,7 @@ import datetime
 
 from django.utils import timezone
 from django.db.models import Max
+from django.db import connection
 from telegram import ParseMode, Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import CallbackContext, CommandHandler, ConversationHandler, MessageHandler, Filters
 
@@ -32,12 +33,16 @@ def get_dict_of_categories() -> dict:
 
 def command_start(update: Update, context: CallbackContext) -> str:
     keyboard = ReplyKeyboardMarkup([get_dict_of_categories().keys()], resize_keyboard=True)
-    text = StaticText.objects.get(key_word='start').text
-    update.message.reply_text(
-        text, reply_markup=keyboard
-    )
+    text = StaticText.objects.all().filter(key_word='start')
+    if text:
+        update.message.reply_text(
+            text, reply_markup=keyboard
+        )
+    else:
+        update.message.reply_text(
+            'hello', reply_markup=keyboard
+        )
     context.user_data['level'] = -1
-    print(get_dict_of_categories().keys())
     return 'main_menu'
 
 
@@ -53,11 +58,18 @@ def category(update: Update, context: CallbackContext) -> str:
             list_for_buttons.append([lst[i]])
 
     keyboard = ReplyKeyboardMarkup(list_for_buttons, resize_keyboard=True)
-
-    update.message.reply_text(
-        StaticText.objects.get(key_word='choice_of_category').text,
-        reply_markup=keyboard,
-    )
+    text = StaticText.objects.all().filter(key_word='choice_of_category')
+    if text:
+        update.message.reply_text(
+            text.text,
+            reply_markup=keyboard,
+        )
+    else:
+        print('NO TEXT')
+        update.message.reply_text(
+            'Категории',
+            reply_markup=keyboard,
+        )
     if update.message.text in get_dict_of_categories()['Категории']:
         return update.message.text
     else:
@@ -131,14 +143,21 @@ def secret_level(update: Update, context: CallbackContext) -> None:
 
 
 def get_conv_handler():
-    list_of_cats = Category.objects.all()
-    conv_handler = ConversationHandler(
-            entry_points=[CommandHandler('start', command_start)],
-            states={
-                'main_menu': [MessageHandler(Filters.regex(f"^({'|'.join(get_dict_of_categories().keys())})$"), category)],
-                'Категории': [MessageHandler(Filters.regex(f"^({'|'.join(get_dict_of_categories()['Категории'])})$"), subcategory)],
-                'Подкатегории': [MessageHandler(Filters.regex(f"^({'|'.join([el.name for el in list_of_cats])})$"), subsubcategory)],
-            },
-            fallbacks=[CommandHandler('back', cancel)],
-        )
-    return conv_handler
+    all_tables = connection.introspection.table_names()
+    if 'tgbot_category' in all_tables:
+        list_of_cats = Category.objects.all()
+        all_tables = connection.introspection.table_names()
+        conv_handler = ConversationHandler(
+                entry_points=[CommandHandler('start', command_start)],
+                states={
+                    'main_menu': [MessageHandler(Filters.regex(f"^({'|'.join(get_dict_of_categories().keys())})$"), category)],
+                    'Категории': [MessageHandler(Filters.regex(f"^({'|'.join(get_dict_of_categories()['Категории'])})$"), subcategory)],
+                    'Подкатегории': [MessageHandler(Filters.regex(f"^({'|'.join([el.name for el in list_of_cats])})$"), subsubcategory)],
+                },
+                fallbacks=[CommandHandler('back', cancel)],
+            )
+        return conv_handler
+    else:
+        return ConversationHandler(entry_points=[CommandHandler('start', command_start)],
+                                   states={'main_menu': [MessageHandler(Filters.text == '', category)]},
+                                   fallbacks=[CommandHandler('back', cancel)])
