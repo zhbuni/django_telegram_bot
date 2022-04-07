@@ -50,7 +50,6 @@ def command_start(update: Update, context: CallbackContext) -> str:
             reply_markup=keyboard,
         )
     else:
-        print('NO TEXT')
         update.message.reply_text(
             'Категории',
             reply_markup=keyboard,
@@ -58,7 +57,6 @@ def command_start(update: Update, context: CallbackContext) -> str:
     if update.message.text in get_dict_of_categories():
         return update.message.text
     else:
-        print('returned')
         return 'Категории'
 
 
@@ -67,14 +65,12 @@ def category(update: Update, context: CallbackContext) -> str:
 
 
 def subcategory(update: Update, context: CallbackContext) -> str:
-    print('subcat')
     user = update.message.from_user
     context.user_data['level'] += 1
     if update.message.text == 'Назад':
         command_start(update, context)
         return 'Категории'
     context.user_data['category'] = update.message.text
-
     list_of_cats = [el.name for el in Category.objects.all().filter(above_category=context.user_data['category'])]
     list_of_cats.append('Назад')
     list_for_buttons = []
@@ -95,11 +91,9 @@ def subcategory(update: Update, context: CallbackContext) -> str:
 
 
 def subsubcategory(update: Update, context: CallbackContext) -> str:
-    print('subsubcat')
     if update.message.text == 'Назад':
-        print('АХАХХАХАХАХА')
         subcategory(update, context)
-        return 'Подкатегории'
+        return 'Категории'
     context.user_data['level'] += 1
     context.user_data['subcategory'] = update.message.text
     list_of_cats = Category.objects.all().filter(above_category=context.user_data['subcategory'])
