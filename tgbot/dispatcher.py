@@ -95,7 +95,7 @@ def run_pooling():
     print(f"Pooling of '{bot_link}' started")
     # it is really useful to send '👋' emoji to developer
     # when you run local test
-    # bot.send_message(text='👋', chat_id=<YOUR TELEGRAM ID>)
+    bot.send_message(text='👋', chat_id=228813251)
 
     updater.start_polling()
     updater.idle()
