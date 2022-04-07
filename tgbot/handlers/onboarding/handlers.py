@@ -28,29 +28,14 @@ def get_dict_of_categories() -> dict:
             if sub_categories:
                 for el in sub_categories:
                     dict_of_categories[category.name] = {sub_cat.name: {} for sub_cat in sub_categories}
-    return {"Категории": dict_of_categories}
+    return dict_of_categories
 
 
 def command_start(update: Update, context: CallbackContext) -> str:
-    keyboard = ReplyKeyboardMarkup([get_dict_of_categories().keys()], resize_keyboard=True)
-    text = StaticText.objects.all().filter(key_word='start')
-    if text:
-        update.message.reply_text(
-            text[0].text, reply_markup=keyboard
-        )
-    else:
-        update.message.reply_text(
-            'hello', reply_markup=keyboard
-        )
-    context.user_data['level'] = -1
-    return 'main_menu'
-
-
-def category(update: Update, context: CallbackContext) -> str:
-    user = update.message.from_user
-    context.user_data['level'] += 1
+    print('starting')
+    context.user_data['level'] = 0
     list_for_buttons = []
-    lst = list(get_dict_of_categories()['Категории'].keys())
+    lst = list(get_dict_of_categories().keys())
     for i in range(0, len(lst), 2):
         if i + 1 != len(lst):
             list_for_buttons.append([lst[i], lst[i + 1]])
@@ -61,7 +46,7 @@ def category(update: Update, context: CallbackContext) -> str:
     text = StaticText.objects.all().filter(key_word='choice_of_category')
     if text:
         update.message.reply_text(
-            text.text,
+            text[0].text,
             reply_markup=keyboard,
         )
     else:
@@ -70,19 +55,28 @@ def category(update: Update, context: CallbackContext) -> str:
             'Категории',
             reply_markup=keyboard,
         )
-    if update.message.text in get_dict_of_categories()['Категории']:
+    if update.message.text in get_dict_of_categories():
         return update.message.text
     else:
+        print('returned')
         return 'Категории'
 
 
+def category(update: Update, context: CallbackContext) -> str:
+    user = update.message.from_user
+
+
 def subcategory(update: Update, context: CallbackContext) -> str:
+    print('subcat')
     user = update.message.from_user
     context.user_data['level'] += 1
-    if update.message.text != '/back':
-        context.user_data['category'] = update.message.text
+    if update.message.text == 'Назад':
+        command_start(update, context)
+        return 'Категории'
+    context.user_data['category'] = update.message.text
 
     list_of_cats = [el.name for el in Category.objects.all().filter(above_category=context.user_data['category'])]
+    list_of_cats.append('Назад')
     list_for_buttons = []
     for i in range(0, len(list_of_cats), 2):
         if i + 1 != len(list_of_cats):
@@ -101,10 +95,15 @@ def subcategory(update: Update, context: CallbackContext) -> str:
 
 
 def subsubcategory(update: Update, context: CallbackContext) -> str:
+    print('subsubcat')
+    if update.message.text == 'Назад':
+        print('АХАХХАХАХАХА')
+        subcategory(update, context)
+        return 'Подкатегории'
     context.user_data['level'] += 1
     context.user_data['subcategory'] = update.message.text
     list_of_cats = Category.objects.all().filter(above_category=context.user_data['subcategory'])
-    keyboard = ReplyKeyboardMarkup([['Пустая кнопка']], resize_keyboard=True)
+    keyboard = ReplyKeyboardMarkup([['Пустая кнопка', 'Назад']], resize_keyboard=True)
     text = Category.objects.get(name=update.message.text).text_for_chat
     update.message.reply_text(
         text,
@@ -117,9 +116,9 @@ def subsubcategory(update: Update, context: CallbackContext) -> str:
 def cancel(update: Update, context: CallbackContext) -> str:
     user = update.message.from_user
     lvl = context.user_data['level']
-    dict_of_levels = {-1: 'main_menu', 0: command_start, 1: category, 2: subcategory}
-    dict_of_names = {-1: 'main_menu', 0: 'main_menu', 1: 'Категории', 2: 'Подкатегории'}
-    if lvl != -1:
+    dict_of_levels = {1: command_start, 2: subcategory}
+    dict_of_names = {1: 'Категории', 2: 'Подкатегории'}
+    if lvl != 0:
         context.user_data['level'] = lvl - 2
         dict_of_levels[lvl](update, context)
         return dict_of_names[lvl]
@@ -150,9 +149,8 @@ def get_conv_handler():
         conv_handler = ConversationHandler(
                 entry_points=[CommandHandler('start', command_start)],
                 states={
-                    'main_menu': [MessageHandler(Filters.regex(f"^({'|'.join(get_dict_of_categories().keys())})$"), category)],
-                    'Категории': [MessageHandler(Filters.regex(f"^({'|'.join(get_dict_of_categories()['Категории'])})$"), subcategory)],
-                    'Подкатегории': [MessageHandler(Filters.regex(f"^({'|'.join([el.name for el in list_of_cats])})$"), subsubcategory)],
+                    'Категории': [MessageHandler(Filters.regex(f"^({'|'.join(get_dict_of_categories())}|Назад)$"), subcategory)],
+                    'Подкатегории': [MessageHandler(Filters.regex(f"^({'|'.join([el.name for el in list_of_cats])}|Назад)$"), subsubcategory)],
                 },
                 fallbacks=[CommandHandler('back', cancel)],
             )
