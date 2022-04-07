@@ -21,6 +21,7 @@ services:
     build: .
     container_name: dtb_django
     command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+
     volumes:
       - .:/code
     ports:
