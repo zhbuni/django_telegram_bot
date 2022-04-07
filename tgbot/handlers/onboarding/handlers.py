@@ -36,7 +36,7 @@ def command_start(update: Update, context: CallbackContext) -> str:
     text = StaticText.objects.all().filter(key_word='start')
     if text:
         update.message.reply_text(
-            text, reply_markup=keyboard
+            text[0].text, reply_markup=keyboard
         )
     else:
         update.message.reply_text(
